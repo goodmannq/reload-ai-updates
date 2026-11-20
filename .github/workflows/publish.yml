@@ -1,0 +1,36 @@
+name: Publish signed Reload.AI update
+on:
+  push:
+    branches: ['release-inbox-*']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify signed payload and publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cat parts/exe.* > Reload.AI-update.exe
+          python3 - <<'PY'
+          import json, hashlib, os, re
+          from pathlib import Path
+          j=json.loads(Path('latest.json').read_bytes()); v=j['version']; assert re.fullmatch(r'[1-9][0-9]?\.[0-9]\.[0-9]',v) and os.environ['GITHUB_REF_NAME']=='release-inbox-'+v
+          h=hashlib.sha256(Path('Reload.AI-update.exe').read_bytes()).hexdigest(); assert h==j['sha256']; s=bytes.fromhex(j['signature']); assert len(s)==64
+          def integer(b):
+              x=b.lstrip(b'\0') or b'\0'; x=(b'\0' if x[0]>=128 else b'')+x; return bytes([2,len(x)])+x
+          a=integer(s[:32])+integer(s[32:]);Path('sig').write_bytes(bytes([48,len(a)])+a);Path('msg').write_text('Reload.AI\n'+v+'\n'+h+'\n')
+          foot=b'RELOAD.AI/SIGNED/1\n'+json.dumps(j,separators=(',',':')).encode();assert len(foot)<512;Path('footer').write_bytes(foot.ljust(512,b'\0'))
+          PY
+          openssl dgst -sha256 -verify public.pem -signature sig msg
+          cat Reload.AI-update.exe footer > Reload.AI.exe
+          v=$(jq -r .version latest.json)
+          gh release create "v$v" --target main --draft --title "Reload.AI $v Beta" --notes-file CHANGELOG.md Reload.AI.exe
+          gh release edit "v$v" --draft=false --latest
