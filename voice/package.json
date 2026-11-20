@@ -1,0 +1,1 @@
+{"name":"reload-assistant-voice","private":true,"type":"module","scripts":{"deploy":"wrangler deploy","test":"node test.mjs"},"devDependencies":{"wrangler":"^4.0.0"},"cloudflare":{"bindings":{"FISH_API_KEY":{"description":"Секретный API-ключ Fish Audio. Только на сервере. Не публикуйте его в GitHub или чате."}}}}

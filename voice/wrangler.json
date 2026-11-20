@@ -1,0 +1,1 @@
+{"name":"reload-assistant-voice","main":"worker.mjs","compatibility_date":"2026-05-01","workers_dev":true,"observability":{"enabled":false},"durable_objects":{"bindings":[{"name":"QUOTA","class_name":"VoiceQuota"}]},"migrations":[{"tag":"v1","new_sqlite_classes":["VoiceQuota"]}]}
