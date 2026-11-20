@@ -34,5 +34,7 @@ jobs:
           v=$(jq -r .version latest.json)
           stage=Beta; if [ "$(printf '%s\n' 1.2.0 "$v" | sort -V | head -n1)" = "1.2.0" ]; then stage=Release; fi
           sha256sum -c setup.sha256
-          gh release create "v$v" --target main --draft --title "Reload.AI $v $stage" --notes-file CHANGELOG.md Reload.AI.exe Reload.AI.Setup.exe
-          gh release edit "v$v" --draft=false --latest
+          expected="sha256:$(sha256sum Reload.AI.exe | cut -d' ' -f1)"
+          published=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/v$v" --jq '.assets[] | select(.name=="Reload.AI.exe") | .digest')
+          test "$expected" = "$published"
+          gh release upload "v$v" Reload.AI.Setup.exe --clobber
